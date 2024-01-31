@@ -38,7 +38,8 @@ class MyPolicy(CribbagePolicy):
         for comb in possibleKeepThrow:
             score = 0
             for card in possibleTurnCard:
-                score += scoring.score(self._policy._game, comb[0], card, False)[0] + self._get_value_of_crib_discard_pair(comb[1], card, am_dealer)
+                score += (scoring.score(self._policy._game, comb[0], card, False)[0] + self._get_value_of_crib_discard_pair(comb[1], card, am_dealer)) / 46
+                # score normalized to average score per round
                 # print("turn: {0} card: {1} score: {2}".format(card, comb[0], score))
             if score > bestKeepThrowScore:
                     bestKeepThrow = comb
