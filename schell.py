@@ -8,8 +8,8 @@ from deck import Deck, Card
 class Schell:
     def __init__(self):
         self._game = Game()
-        self._saveFileName1 = "20000_throws_cribT.pickle"
-        self._saveFileName2 = "20000_throws_cribF.pickle"
+        self._saveFileName1 = "200000_throws_cribT.pickle"
+        self._saveFileName2 = "200000_throws_cribF.pickle"
         self._saveFileSchellsDealerName = "schellsTableDealer.pickle"
         self._saveFileSchellsNonDealerName = "schellsTableNonDealer.pickle"
         self._throws_T_possible = []
@@ -18,18 +18,18 @@ class Schell:
         self.schellsTableNonDealer = {}
         if path.isfile(self._saveFileName1):
             file = open(self._saveFileName1, "rb")
-            self._load_20000_throws_T(file)
+            self._load_200000_throws_T(file)
         else:
-            self._throws_T_possible = self._get_20000_throws_possible(self._game, 1)
+            self._throws_T_possible = self._get_200000_throws_possible(self._game, 1)
             file = open(self._saveFileName1, "wb")
-            self._save_20000_throws_T(self._throws_T_possible, file)
+            self._save_200000_throws_T(self._throws_T_possible, file)
         if path.isfile(self._saveFileName2):
             file = open(self._saveFileName2, "rb")
-            self._load_20000_throws_F(file)
+            self._load_200000_throws_F(file)
         else:
-            self._throws_F_possible = self._get_20000_throws_possible(self._game, -1)
+            self._throws_F_possible = self._get_200000_throws_possible(self._game, -1)
             file = open(self._saveFileName2, "wb")
-            self._save_20000_throws_F(self._throws_F_possible, file)
+            self._save_200000_throws_F(self._throws_F_possible, file)
         if path.isfile(self._saveFileSchellsDealerName):
             file = open(self._saveFileSchellsDealerName, "rb")
             self.schellsTableDealer = pickle.load(file)
@@ -41,26 +41,26 @@ class Schell:
         else:
             self._calculate_schells_table_for_non_dealer(self._game)
         
-    def _get_20000_throws_possible(self, game, crib):
+    def _get_200000_throws_possible(self, game, crib):
         deck = Deck((1,2,3,4,5,6,7,8,9,10,11,12,13), ("H"), 4)
         # only have hearts in the deck so the computation isn't affected by flushes
         # effectively, this is equivalent to not considering suits.
         throws = []
-        for i in range(0, 20000):
+        for i in range(0, 200000):
             deck.shuffle()
             throws.append(greedy_throw(game, deck.peek(6), crib)[1])
         return throws
             
-    def _save_20000_throws_T(self, throws, file):
+    def _save_200000_throws_T(self, throws, file):
         pickle.dump(throws, file)
         
-    def _save_20000_throws_F(self, throws, file):
+    def _save_200000_throws_F(self, throws, file):
         pickle.dump(throws, file)
         
-    def _load_20000_throws_T(self, file):
+    def _load_200000_throws_T(self, file):
         self._throws_T_possible = pickle.load(file)
         
-    def _load_20000_throws_F(self, file):
+    def _load_200000_throws_F(self, file):
         self._throws_F_possible = pickle.load(file)
         
     def _get_all_discard_pairs_possible(self, game):
@@ -89,7 +89,7 @@ class Schell:
                 for op_throw in self._throws_F_possible:
                     # from the opponent's perspective, they don't own the crib
                     cribCards = op_throw
-                    discard_value += score(game, list(cribCards) + list(discard), turn, True)[0] / 260000
+                    discard_value += score(game, list(cribCards) + list(discard), turn, True)[0] / 2600000
                     # the value is normalized to the average score for one round
             print(discard_value, flush=True)
             schellsTable.update({(discard[0].rank(), discard[1].rank()): discard_value})
@@ -110,7 +110,7 @@ class Schell:
                 for op_throw in self._throws_T_possible:
                     # from the opponent's perspective, they own the crib
                     cribCards = op_throw
-                    discard_value -= score(game, list(cribCards) + list(discard), turn, True)[0] / 260000
+                    discard_value -= score(game, list(cribCards) + list(discard), turn, True)[0] / 2600000
                     # the value is normalized to the average score for one round
             print(discard_value, flush=True)
             schellsTable.update({(discard[0].rank(), discard[1].rank()): discard_value})
@@ -124,3 +124,8 @@ class Schell:
             return self.schellsTableDealer[cards[0].rank(), cards[1].rank()]
         else:
             return self.schellsTableNonDealer[cards[0].rank(), cards[1].rank()]
+
+c1 = Card(1, "C")
+c2 = Card(11, "H")
+s = Schell()
+s.look_up_in_schells_table([c1, c2], False)
