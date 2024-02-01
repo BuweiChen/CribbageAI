@@ -1,10 +1,13 @@
 from policy import CribbagePolicy, CompositePolicy, GreedyThrower, GreedyPegger
+from schell import Schell
+from deck import Card
 import itertools
 import scoring
 
 class MyPolicy(CribbagePolicy):
     def __init__(self, game):
         self._policy = CompositePolicy(game, GreedyThrower(game), GreedyPegger(game))
+        self._schell = Schell()
         
     def _get_possible_turn_cards(self, hand):
         deck = self._policy._game.deck()
@@ -21,8 +24,13 @@ class MyPolicy(CribbagePolicy):
         
         return all_combinations
     
-    def _get_value_of_crib_discard_pair(self, cards, turn, am_dealer):
-        return scoring.score(self._policy._game, cards, turn, True)[0] if am_dealer else -scoring.score(self._policy._game, cards, turn, True)[0]
+    def _get_value_of_crib_discard_pair(self, cards, am_dealer):
+        r1 = cards[0].rank()
+        r2 = cards[1].rank()
+        if r1 < r2:
+            return self._schell.look_up_in_schells_table([cards[0], cards[1]], am_dealer)
+        else:
+            return self._schell.look_up_in_schells_table([cards[1], cards[0]], am_dealer)
         
     def keep(self, hand, scores, am_dealer):
         """ basic keep policy: considers turn card and greedy opponent discard
@@ -36,9 +44,9 @@ class MyPolicy(CribbagePolicy):
         bestKeepThrow = ()
         bestKeepThrowScore = float('-inf')
         for comb in possibleKeepThrow:
-            score = 0
+            score = self._get_value_of_crib_discard_pair(comb[1], am_dealer)
             for card in possibleTurnCard:
-                score += (scoring.score(self._policy._game, comb[0], card, False)[0] + self._get_value_of_crib_discard_pair(comb[1], card, am_dealer)) / 46
+                score += (scoring.score(self._policy._game, comb[0], card, False)[0]) / 46
                 # score normalized to average score per round
                 # print("turn: {0} card: {1} score: {2}".format(card, comb[0], score))
             if score > bestKeepThrowScore:
