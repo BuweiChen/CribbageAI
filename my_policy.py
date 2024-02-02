@@ -28,9 +28,9 @@ class MyPolicy(CribbagePolicy):
         r1 = cards[0].rank()
         r2 = cards[1].rank()
         if r1 < r2:
-            return self._schell.look_up_in_schells_table([cards[0], cards[1]], am_dealer)
+            return self._schell.look_up_in_schells_table(r1, r2, am_dealer)
         else:
-            return self._schell.look_up_in_schells_table([cards[1], cards[0]], am_dealer)
+            return self._schell.look_up_in_schells_table(r2, r1, am_dealer)
         
     def keep(self, hand, scores, am_dealer):
         """ basic keep policy: considers turn card and greedy opponent discard
@@ -60,7 +60,60 @@ class MyPolicy(CribbagePolicy):
 
 
     def peg(self, cards, history, turn, scores, am_dealer):
-        return self._policy.peg(cards, history, turn, scores, am_dealer)
+        """ idea: most of a card's value comes from scoring points, 
+            but in the case of tie-breaking, we introduce cards that set up
+            future scoring with high probability.
+            e.g. bait pair -> 15, bait 15 -> pair
+            lower priority: bait pair -> 31
+            baiting runs feels too hard to implement
+            additionally, try to avoid 5 and 21 (weighted slightly more than bait pairs)
+            try to avoid 10 and 26 (weighted at half of prev, since it's likely opponent holds onto 5)
+            
+            pre-15 strategy: stay low, but try to keep 1, 2, 3, 4 in hand to score go, smaller cards weighed 
+            less for playing
+            general rule: play cards from large to small
+        """
+        card_scores = {}
+        card_ranks = []
+        for card in cards:
+            card_ranks.append(card.rank())
+            
+        # weigh cards from large to small by sorting them in decreasing order, 
+        # so exact ties broken by priority
+        
+        sortedHand = sorted(cards, key=(lambda c: c.rank()), reverse=True)
+        
+        for card in cards:
+            score = history.score(self._policy._game, card, 0 if am_dealer else 1)
+            # bait pair 
+            if (15 - history.total_points() - 2 * card.rank()) in card_ranks:
+                score += 0.4
+                
+            if (31 - history.total_points() - 2 * card.rank()) in card_ranks:
+                score += 0.4
+                
+            # bait fifteen, weighed less because 0 net gain, but potentially mitigate damage
+            if (15 - history.total_points() - card.rank()) in card_ranks:
+                score += 0.2
+            
+            # try to avoid 5 and 21
+            if history.total_points() + card.rank() == 5 or history.total_points() + card.rank() == 21:
+                score -= 0.5
+                
+            # try to avoid 10 and 26
+            if history.total_points() + card.rank() == 10 or history.total_points() + card.rank() == 26:
+                score -= 0.25
+            
+            card_scores.update({card: score})
+            
+        best_card = None
+        best_score = None
+        for card in sortedHand:
+            score = card_scores[card]
+            if score is not None and (best_score is None or score > best_score):
+                best_score = score
+                best_card = card
+        return best_card
 
     
 

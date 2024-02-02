@@ -119,13 +119,8 @@ class Schell:
         saveFile = open(self._saveFileSchellsNonDealerName, "wb")
         pickle.dump(schellsTable, saveFile)
         
-    def look_up_in_schells_table(self, cards, am_dealer):
+    def look_up_in_schells_table(self, r1, r2, am_dealer):
         if am_dealer:
-            return self.schellsTableDealer[cards[0].rank(), cards[1].rank()]
+            return self.schellsTableDealer[r1, r2]
         else:
-            return self.schellsTableNonDealer[cards[0].rank(), cards[1].rank()]
-
-c1 = Card(1, "C")
-c2 = Card(11, "H")
-s = Schell()
-s.look_up_in_schells_table([c1, c2], False)
+            return self.schellsTableNonDealer[r1, r2]
